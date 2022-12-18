@@ -1,0 +1,16 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model Forums.ViewModel.CreateRole
+
+<form asp-action="CreateRole" method="post" class="row gy-3">
+    <div class="col-12">
+        <label class="form-label" for="roleName">Role Name:</label>
+        <input class="form-control" id="roleName" asp-for="@Model.RoleName" />
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">submit</button>
+    </div>
+</form>

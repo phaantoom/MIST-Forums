@@ -1,0 +1,45 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model Forums.ViewModel.CreateUser
+
+<form asp-action="Register" method="post" class="row gy-3">
+    <div asp-validation-summary="All" class="text-danger">
+
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="FullName">Full Name:</label>
+        <input class="form-control" id="FullName" asp-for="@Model.FullName" />
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="email">Email:</label>
+        <input class="form-control" id="email" asp-for="@Model.Email" />
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="Password">Password:</label>
+        <input type="password" class="form-control" id="Password" asp-for="@Model.Password" />
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="ConfirmPassword">Confirm Password:</label>
+        <input type="password" class="form-control" id="ConfirmPassword" asp-for="@Model.ConfirmPassword" />
+    </div>
+    <div class="col-12">
+        <label class="form-label">User Level</label>
+        <select class="form-select" asp-for="levelId" asp-items="ViewBag.LevelsListItem"></select>
+    </div>
+    <div class="col-12">
+        <label class="form-label">User Role</label>
+        <select class="form-select" asp-for="RoleId" asp-items="ViewBag.roleList"></select>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">submit</button>
+    </div>
+</form>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_validationscriptspartial.cshtml");
+    }
+}

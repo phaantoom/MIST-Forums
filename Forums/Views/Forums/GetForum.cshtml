@@ -1,0 +1,228 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<Users> userManager;
+@{
+    var user = await userManager.GetUserAsync(User);
+    var role = await userManager.IsInRoleAsync(user, "Admin");
+    var admin = role.ToString().ToLower();
+}
+@model Forums.ViewModel.ForumsWithComments
+
+<div class="row gy-2 justify-content-around">
+    <div class="card col-8">
+        <h5 class="card-header">@Model.Title</h5>
+        <div class="card-body">
+            <p class="card-text">@Model.Description</p>
+            <hr />
+            <div class="row">
+                <div class="col" id="CommentList">
+                    @foreach (var comment in Model.UserForum)
+                    {
+                        <div class="d-flex flex-start mb-4 rounded-1 border py-2" id="Comment@(comment.Id)">
+
+                            <img src='https://i.imgur.com/CFpa3nK.jpg' alt='avatar' class='rounded-circle shadow-1-strong me-3' width='65' height='65'>
+                            <div class='flex-grow-1 flex-shrink-1'>
+                                <div>
+                                    <div class='d-flex justify-content-between align-items-center'>
+                                        <p class='mb-1'><a asp-action="GetProfile" asp-controller="Users" asp-route-id="@comment.userId"> @comment.userName </a> <span class='small'> - @comment.CreatedDate</span></p>
+                                    </div>
+
+                                    <p class='small mb-0'>@comment.Comment </p>
+                                </div>
+
+                                @if (role)
+                                {
+                                    <div class="row">
+                                        <a onclick='deleteComment(@comment.Id)' class='link-danger delete'>Delete</a>
+                                    </div>
+                                }
+                                @if (comment.Replies.Count == 0)
+                                {
+                                    <div class="row" id="replyToggle@(comment.Id)" style="visibility:hidden">
+                                        <a class="btn dropdown-toggle w-auto" data-bs-toggle="collapse" href="#replyCollapse@(comment.Id)" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="row" id="replyToggle@(comment.Id)" style="visibility:visible">
+                                        <a class="btn dropdown-toggle w-auto" data-bs-toggle="collapse" href="#replyCollapse@(comment.Id)" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
+                                    </div>
+                                }
+                                <div class="collapse" id="replyCollapse@(comment.Id)">
+                                    <div id="replyList@(comment.Id)">
+                                        @foreach (var reply in comment.Replies)
+                                        {
+                                            <div class='d-flex flex-start mt-4' id="Comment@(reply.Id)">
+                                                <a class='me-3' href='#'>
+                                                    <img src='https://i.imgur.com/CFpa3nK.jpg' alt='avatar' class='rounded-circle shadow-1-strong' width='65' height='65'>
+                                                </a>
+                                                <div class='flex-grow-1 flex-shrink-1'>
+                                                    <div>
+                                                        <div class='d-flex justify-content-between align-items-center'>
+                                                            <p class='mb-1'>
+                                                                <a asp-action="GetProfile" asp-controller="Users" asp-route-id="@comment.userId">
+                                                                    @reply.userName
+                                                                </a>
+                                                                <span class='small'> -  @reply.CreatedDate </span>
+                                                            </p>
+                                                        </div>
+                                                        <p class='small mb-0'> @reply.Comment </p>
+                                                    </div>
+                                                    @if (role)
+                                                    {
+                                                        <a onclick='DeleteReply(@reply.Id)' class='link-danger delete'>Delete</a>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                @*<div class='row w-50 p-2'>
+                            <div class='col-8'>
+                            <input class='form-control' id="reply@(comment.Id)" type='text' placeholder='write reply' aria-label='Write Reply ...'>
+                            </div>
+                            <div class='col-4'>
+                            <button class='btn btn-primary' onclick='AddReply(@comment.Id)'>Reply</button>
+                            </div>
+                            </div>*@
+                            </div>
+                            <input type="hidden" value="@comment.RepliesCount" id="repliesCount@(comment.Id)">
+                            <a asp-action="GetComment" asp-route-id="@comment.Id" id="repliesCountText@(comment.Id)" class="my-2">Show All @(comment.RepliesCount) Replies...</a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button onclick="getNextPage()" class="btn btn-link my-2">Load more...</button>
+            <div class="row p-2 justify-content-end">
+                <div class="col-8">
+                    <textarea wrap="hard" maxlength="500" class="form-control" id="comment" type="text" placeholder="write comment" aria-label="Write comment ..."></textarea>
+                    </div>
+                <div class="col-4">
+                    <button class="btn btn-primary" onclick="AddComment()">Comment</button>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" value="@Model.Id" id="ForumId" />
+    </div>
+
+    <div class="col-3 align-self-center" id="stats">
+    </div>
+</div>
+@section Scripts{
+    <script>
+        $(document).ready(function () {
+            var id = $('#ForumId').val();
+            loadStats();
+        });
+        function loadStats(){
+            $('#stats').load('@Url.Action("GetForumStatistics","Forums",new { id = ViewContext.RouteData.Values["id"]})');
+        }
+        var commentPage = 1;
+        function getNextPage() {
+            $.ajax({
+                type: 'get',
+                dataType: 'JSON',
+                url: '/Forums/GetForumsComment',
+                data: {
+                    forumId: $('#ForumId').val(),
+                    page: commentPage++
+                },
+                success: function (data) {
+                    ListComments(data, true);
+                },
+                error: function (data) {
+                    console.log(data)
+                }
+            });
+        }
+        function AddComment() {
+            $.ajax({
+                type: 'post',
+                dataType: 'JSON',
+                url: '/Forums/AddComment',
+                data: {
+                    forumId: $('#ForumId').val(),
+                    comment: $('#comment').val()
+                },
+                success: function (data) {
+                    $('#comment').val('')
+                    ListComments(data, true);
+                    loadStats();
+                },
+                error: function (data) {
+                    console.log('hiii')
+                }
+            });
+        }
+        function ListComments(data, append) {
+            var str = ""
+            var replies
+            $.each(data, function (i, obj) {
+
+                if ($("#Comment" + obj.id).length == 0) {
+                    replies = ""
+                    $.each(obj.replies, function (j, reply) {
+                        replies += "<div class='d-flex flex-start mt-4' id='Comment" + reply.id + "'><a class='me-3' href='#'><img src='https://i.imgur.com/CFpa3nK.jpg' alt = 'avatar' class='rounded-circle shadow-1-strong' width = '65' height = '65' ></a><div class='flex-grow-1 flex-shrink-1'><div><div class='d-flex justify-content-between align-items-center'><p class='mb-1'><a href='/Users/GetProfile/" + obj.userId + "'>" + reply.userName + "</a><span class='small'> - " + formatDate(reply.createdDate) + "</span></p></div>"
+                            + "<p class='small mb-0'>" + reply.comment + "</p></div><a onclick='DeleteReply(" + reply.id + ")' class='link-danger delete'>Delete</a></div></div>";//<a asp-action='GetProfile' asp-controller='User' asp-route-id=" + reply.userId + "</a>
+                    });
+                    str += "<div class='d-flex flex-start mb-4 rounded-1 border py-2' id = 'Comment" + obj.id + "'> <img src='https://i.imgur.com/CFpa3nK.jpg' alt = 'avatar' class='rounded-circle shadow-1-strong me-3' width = '65' height = '65' > <div class='flex-grow-1 flex-shrink-1' > <div><div class='d-flex justify-content-between align-items-center'>"
+                        + "<p class='mb-1'><a href='/Users/GetProfile/" + obj.userId + "'>" + obj.userName + "</a><span class='small'> - " + formatDate(obj.createdDate) + " </span></p></div><p class='small mb-0'>" + obj.comment + " </p></div><a onclick='deleteComment(" + obj.id + ")' class='link-danger delete'><span>Delete </span></a>"
+                        + "<div class='row'>";
+                    if (obj.replies.length)
+                        str += "<a id='replyToggle" + obj.id + "' class='btn dropdown-toggle w-auto' data-bs-toggle='collapse' href = '#replyCollapse" + obj.id + "' role = 'button' aria-expanded='false' aria-controls='collapseExample'></a>"
+                    else
+                        str += "<a id='replyToggle" + obj.id + "' style='visibility:hidden' class='btn dropdown-toggle w-auto' data-bs-toggle='collapse' href = '#replyCollapse" + obj.id + "' role = 'button' aria-expanded='false' aria-controls='collapseExample'></a>";
+                    str += "</div><div class='collapse' id='replyCollapse" + obj.id + "'><div id='replyList" + obj.id + "'>" + replies + "</div></div></div><a href='/Forums/GetComment/" + obj.id + "' id='repliesCountText" + obj.id + "' class='my-2'>Show All " + obj.repliesCount + " Replies...</a></div>";
+                }
+            });
+            if (append) {
+                $('#CommentList').append(str);
+            }
+            else {
+                $('#CommentList').html(str);
+            }
+            if (!@admin)
+                $('.delete').css('display', 'none')
+            $('.collapse').collapse('hide');
+        }
+        function deleteComment(id) {
+            console.log(id)
+            $.ajax({
+                type: 'post',
+                dataType: 'JSON',
+                url: '/Forums/DeleteComment',
+                data: {
+                    commentId: id
+                },
+                success: function (data) {
+                    $("#Comment" + id).remove();
+                    loadStats();
+                },
+                error: function (data) {
+                    console.log(data)
+                }
+            });
+        }
+        function DeleteReply(id) {
+            console.log(id)
+            $.ajax({
+                type: 'post',
+                dataType: 'JSON',
+                url: '/Forums/DeleteReply',
+                data: {
+                    commentId: id
+                },
+                success: function (data) {
+                    $("#Comment" + id).remove();
+                    loadStats();
+                },
+                error: function (data) {
+                    console.log(data)
+                }
+            });
+        }
+    </script>
+}

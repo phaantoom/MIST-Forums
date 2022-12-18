@@ -1,0 +1,48 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model Forums.ViewModel.EditForum
+@{
+
+}
+<form class="row gy-3" onkeypress="submit()" asp-action="EditForum" asp-controller="Forums" method="post">
+    <div asp-validation-summary="All" class="text-danger">
+    </div>
+    <div class="col-12">
+        <labe for="formTitle" class="form-label">Forum Title</labe>
+        <input class="form-control" id="formTitle" type="text" asp-for="Title" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <labe for="formDescription" class="form-label">Forum Description</labe>
+        <input class="form-control" id="formDescription" type="text" asp-for="Description" />
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label for="formLevel" class="form-label">Forum Level</label>
+        <select asp-for="levelId" class="form-select" id="formLevel" asp-items="ViewBag.LevelsListItem">
+        </select>
+        <span asp-validation-for="levelId" class="text-danger"></span>
+    </div>
+
+    <input type="hidden" asp-for="Id" value="@Model.Id" />
+    <div class="col-12">
+        <button type="submit" id="submit" class="btn btn-primary">submit</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_validationscriptspartial.cshtml");
+    }
+    <script>
+        function submit(e) {
+            keycode = e.keyCode || e.charCode || e.which //for cross browser
+            if (keycode == 13)    //keyCode for enter key
+            {
+                $('#submit').trigger('click');
+            }
+        }
+    </script>
+}

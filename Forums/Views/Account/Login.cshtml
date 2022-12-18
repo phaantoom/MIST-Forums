@@ -1,0 +1,27 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model Forums.ViewModel.SignInUser
+<form asp-action="Login" method="post" class="row gy-3" asp-route-ReturnUrl="@ViewBag.ReturnUrl">
+    <div asp-validation-summary="All" class="text-danger">
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="email">Email:</label>
+        <input class="form-control" id="email" asp-for="@Model.Email" />
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="Password">Password:</label>
+        <input type="password" class="form-control" id="Password" asp-for="@Model.Password" />
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">submit</button>
+    </div>
+</form>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_validationscriptspartial.cshtml");
+    }
+}
