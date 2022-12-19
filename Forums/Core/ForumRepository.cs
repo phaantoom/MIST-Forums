@@ -1,8 +1,10 @@
 ﻿using Forums.Models;
+using Forums.StopWords;
 using Forums.ViewModel;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Forums.Core
 {
@@ -114,7 +116,7 @@ namespace Forums.Core
 
         public int GetReplyCountByDate(int? id, DateTime? date, bool Equal = true)
         {
-            if(!id.HasValue)
+            if (!id.HasValue)
             {
                 if (date.HasValue && Equal)
                 {
@@ -242,6 +244,46 @@ namespace Forums.Core
                         .Select(x => x.userId).Distinct()
                         .Count();
             }
+        }
+        public List<UserForum> SearchComments(string[] query, int userLevel, int page, int count = 3)
+        {
+            IEnumerable<UserForum> list = new List<UserForum>();
+            Expression<Func<UserForum, bool>> expression = x => true;
+            if (userLevel == 0)
+            {
+                foreach (string term in query)
+                {
+                    list = list.Concat(
+                    (IEnumerable<UserForum>)_context.UserForums
+                    .Include(x => x.forum)
+                    .Include(c => c.Replies)
+                    .Include(x => x.user)
+                    .Where(x => x.Comment.Contains(term) && x.ParentId == null)
+                    ).ToList();
+                }
+            }
+            else
+            {
+                foreach (string term in query)
+                {
+                    list = list.Concat(
+                    (IEnumerable<UserForum>)_context.UserForums
+                    .Include(x => x.forum)
+                    .Include(c => c.Replies)
+                    .Include(x => x.user)
+                    .Where(x => x.Comment.Contains(term) && x.ParentId == null && x.forum.levelId <= userLevel)
+                    ).ToList();
+                }
+            }
+            list = list.OrderByDescending(x => x.Id)
+                .Skip(count * page).Take(count);
+
+            foreach (var comment in list)
+            {
+                comment.Replies = comment.Replies.OrderByDescending(x => x.Id).Take(count).ToList();
+            }
+
+            return list.ToList();
         }
     }
 }

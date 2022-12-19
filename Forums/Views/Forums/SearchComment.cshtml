@@ -1,6 +1,7 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model List<Forums.ViewModel.GetUserForums>
 @using Microsoft.AspNetCore.Identity;
 @inject UserManager<Users> userManager;
 @{
@@ -8,17 +9,14 @@
     var role = await userManager.IsInRoleAsync(user, "Admin");
     var admin = role.ToString().ToLower();
 }
-@model Forums.ViewModel.ForumsWithComments
 
-<div class="row gy-2 justify-content-around">
-    <div class="card col-xl-8">
-        <h5 class="card-header">@Model.Title</h5>
+@if (Model.Count > 0)
+{
+    <div class="card x-75">
         <div class="card-body">
-            <p class="card-text">@Model.Description</p>
-            <hr />
             <div class="row">
                 <div class="col" id="CommentList">
-                    @foreach (var comment in Model.UserForum)
+                    @foreach (var comment in Model)
                     {
                         <div class="d-flex flex-start mb-4 rounded-1 border py-2" id="Comment@(comment.Id)">
 
@@ -26,7 +24,9 @@
                             <div class='flex-grow-1 flex-shrink-1'>
                                 <div>
                                     <div class='d-flex justify-content-between align-items-center'>
-                                        <p class='mb-1'><a asp-action="GetProfile" asp-controller="Users" asp-route-id="@comment.userId"> @comment.userName </a> <span class='small'> - @comment.CreatedDate</span></p>
+                                        <p class='mb-1'>
+                                            <a asp-action="GetProfile" asp-controller="Users" asp-route-id="@comment.userId"> @comment.userName </a>
+                                            <span class='small'> - @comment.CreatedDate</span></p>
                                     </div>
 
                                     <p class='small mb-0'>@comment.Comment </p>
@@ -79,84 +79,51 @@
                                         }
                                     </div>
                                 </div>
-                                @*<div class='row w-50 p-2'>
-                            <div class='col-8'>
-                            <input class='form-control' id="reply@(comment.Id)" type='text' placeholder='write reply' aria-label='Write Reply ...'>
                             </div>
-                            <div class='col-4'>
-                            <button class='btn btn-primary' onclick='AddReply(@comment.Id)'>Reply</button>
-                            </div>
-                            </div>*@
-                            </div>
-                            <a asp-action="GetComment" asp-route-id="@comment.Id" id="repliesCountText@(comment.Id)" class="my-2">Show All @(comment.RepliesCount) Replies...</a>
+                            <input type="hidden" value="@ViewBag.query" id="query">
+                            <a asp-action="GetComment" asp-route-id="@comment.Id" id="repliesCountText@(comment.Id)" class="my-2">
+                                Show All @(comment.RepliesCount) Replies...
+                            </a>
                         </div>
                     }
                 </div>
             </div>
-
             <button onclick="getNextPage()" class="btn btn-link my-2">Load more...</button>
-            <div class="row p-2 justify-content-end">
-                <div class="col-8">
-                    <textarea wrap="hard" maxlength="500" class="form-control" id="comment" type="text" placeholder="write comment" aria-label="Write comment ..."></textarea>
-                    </div>
-                <div class="col-4">
-                    <button class="btn btn-primary" onclick="AddComment()">Comment</button>
-                </div>
-            </div>
         </div>
-        <input type="hidden" value="@Model.Id" id="ForumId" />
     </div>
-
-    <div class="col-xl-3 align-self-center" id="stats">
+}
+else
+{
+    <div class="card">
+        <div class="card-text">
+            <h2>Couldn't find search results try different query</h2>
+        </div>
     </div>
-</div>
+}
 @section Scripts{
     <script>
         $(document).ready(function () {
-            var id = $('#ForumId').val();
-            loadStats();
         });
-        function loadStats(){
-            $('#stats').load('@Url.Action("GetForumStatistics","Forums",new { id = ViewContext.RouteData.Values["id"]})');
-        }
         var commentPage = 1;
         function getNextPage() {
             $.ajax({
                 type: 'get',
                 dataType: 'JSON',
-                url: '/Forums/GetForumsComment',
+                url: '/Forums/GetNextSearchComment',
                 data: {
-                    forumId: $('#ForumId').val(),
-                    page: commentPage++
+                    query: $('#query').val(),
+                    page: commentPage++,
                 },
                 success: function (data) {
-                    ListComments(data, true);
+                    console.log(data)
+                    ListComments(data);
                 },
                 error: function (data) {
                     console.log(data)
                 }
             });
         }
-        function AddComment() {
-            $.ajax({
-                type: 'post',
-                dataType: 'JSON',
-                url: '/Forums/AddComment',
-                data: {
-                    forumId: $('#ForumId').val(),
-                    comment: $('#comment').val()
-                },
-                success: function (data) {
-                    $('#comment').val('')
-                    ListComments(data, true);
-                    loadStats();
-                },
-                error: function (data) {
-                    console.log('hiii')
-                }
-            });
-        }
-        function ListComments(data, append) {
+        function ListComments(data) {
             var str = ""
             var replies
             $.each(data, function (i, obj) {
@@ -177,12 +144,7 @@
                     str += "</div><div class='collapse' id='replyCollapse" + obj.id + "'><div id='replyList" + obj.id + "'>" + replies + "</div></div></div><a href='/Forums/GetComment/" + obj.id + "' id='repliesCountText" + obj.id + "' class='my-2'>Show All " + obj.repliesCount + " Replies...</a></div>";
                 }
             });
-            if (append) {
-                $('#CommentList').append(str);
-            }
-            else {
-                $('#CommentList').html(str);
-            }
+            $('#CommentList').append(str);
             if (!@admin)
                 $('.delete').css('display', 'none')
             $('.collapse').collapse('hide');

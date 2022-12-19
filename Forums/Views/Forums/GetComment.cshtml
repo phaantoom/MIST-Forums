@@ -10,52 +10,58 @@
     var admin = role.ToString().ToLower();
 }
 
-<div class="d-flex flex-start mb-4 rounded-1 border py-2" id="Comment@(Model.Id)">
+<div class="card x-75">
+    <div class="card-body">
+        <div class="d-flex flex-start mb-4 rounded-1 border py-2" id="Comment@(Model.Id)">
 
-    <img src='https://i.imgur.com/CFpa3nK.jpg' alt='avatar' class='rounded-circle shadow-1-strong me-3' width='65' height='65'>
-    <div class='flex-grow-1 flex-shrink-1'>
-        <div>
-            <div class='d-flex justify-content-between align-items-center'>
-                <p class='mb-1'><a asp-action="GetProfile" asp-controller="Users" asp-route-id="@Model.userId"> @Model.userName </a> <span class='small'> - @Model.CreatedDate</span></p>
-            </div>
+            <img src='https://i.imgur.com/CFpa3nK.jpg' alt='avatar' class='rounded-circle shadow-1-strong me-3' width='65' height='65'>
+            <div class='flex-grow-1 flex-shrink-1'>
+                <div>
+                    <div class='d-flex justify-content-between align-items-center'>
+                        <p class='mb-1'><a asp-action="GetProfile" asp-controller="Users" asp-route-id="@Model.userId"> @Model.userName </a> <span class='small'> - @Model.CreatedDate</span></p>
+                    </div>
 
-            <p class='small mb-0'>@Model.Comment </p>
-        </div>
+                    <p class='small mb-0'>@Model.Comment </p>
+                </div>
 
-        @if (role)
-        {
-            <div class="row">
-                <a onclick='deleteComment()' class='link-danger delete'>Delete</a>
-            </div>
-        }
+                @if (role)
+                {
+                    <div class="row">
+                        <a onclick='deleteComment()' class='link-danger delete'>Delete</a>
+                    </div>
+                }
 
-        <div class="row" id="replyToggle">
-            @if (Model.RepliesCount > 0)
-            {
-                <a class="btn dropdown-toggle w-auto" id="collapsebtn" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
-            }
-            else
-            {
-                <a style="visibility:hidden" id="collapsebtn" class="btn dropdown-toggle w-auto" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
-            }
-        </div>
+                <div class="row" id="replyToggle">
+                    @if (Model.RepliesCount > 0)
+                    {
+                        <a class="btn dropdown-toggle w-auto" id="collapsebtn" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
+                    }
+                    else
+                    {
+                        <a style="visibility:hidden" id="collapsebtn" class="btn dropdown-toggle w-auto" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
+                    }
+                </div>
 
-        <div class="collapse" id="replyCollapse">
-            <div id="replyList">
+                <div class="collapse" id="replyCollapse">
+                    <div id="replyList">
+                    </div>
+                    <button onclick="getReplies()" class="btn btn-link my-2">Load more...</button>
+                </div>
+
+                <div class='row w-50 p-2'>
+                    <div class='col-8'>
+                        <textarea wrap="hard" maxlength="500" class='form-control' id="reply" type='text' placeholder='write reply' aria-label='Write Reply ...'></textarea>
+                    </div>
+                    <div class='col-4'>
+                        <button class='btn btn-primary' onclick='AddReply()'>Reply</button>
+                    </div>
+                </div>
+
             </div>
-            <button onclick="getReplies()" class="btn btn-link my-2">Load more...</button>
-        </div>
-        <div class='row w-50 p-2'>
-            <div class='col-8'>
-                <textarea wrap="hard" maxlength="500" class='form-control' id="reply" type='text' placeholder='write reply' aria-label='Write Reply ...'></textarea>
-            </div>
-            <div class='col-4'>
-                <button class='btn btn-primary' onclick='AddReply()'>Reply</button>
-            </div>
+            <input type="hidden" value="@Model.Id" id="ParentId" />
+            <input type="hidden" value="@Model.forumId" id="ForumId" />
         </div>
     </div>
-    <input type="hidden" value="@Model.Id" id="ParentId" />
-    <input type="hidden" value="@Model.forumId" id="ForumId" />
 </div>
 
 @section Scripts{
@@ -77,7 +83,7 @@
                 success: function (data) {
                     $('#reply').val('')
                     ListReplies(data, false)
-                    $('#collapsebtn').css('visibility','visible')
+                    $('#collapsebtn').css('visibility', 'visible')
                 },
                 error: function (data) {
                     console.log('hiii')

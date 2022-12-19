@@ -10,10 +10,20 @@
 }
 
 
-<div class="row gy-3 justify-content-around">
+<div class="card my-3 p-3">
+    <div class="row">
+        <div class="col-6">
+            <input class="form-control" type="text" id="search" />
+        </div>
+        <div class="col-4">
+            <button onclick="Search()" class="btn btn-secondary">Search</button>
+        </div>
+    </div>
+</div>
+<div class="row gy-3">
+    <div class="col-xl-9">
 
-    <div class="col-9">
-        <div class="row g-3 justify-content-center">
+        <div class="row g-3">
             @foreach (var forum in Model)
             {
                 <div class="card w-75">
@@ -38,7 +48,7 @@
             }
         </div>
     </div>
-    <div class="col-3 align-self-center" id="stats">
+    <div class="col-xl-3 align-self-center" id="stats">
     </div>
     <div class="modal" tabindex="-1" id="exampleModalToggle">
         <div class="modal-dialog">
@@ -65,7 +75,9 @@
         $(document).ready(function () {
             $('#stats').load('@Url.Action("GetForumStatistics","Forums")');
         });
-
+        function Search(e) {
+            window.location.href = '/Forums/SearchComment?query=' + $('#search').val()
+        }
         var forumId;
         function showModal(id) {
             forumId = id;

@@ -2,6 +2,7 @@
 using Forums.Core;
 using Forums.Mappers;
 using Forums.Models;
+using Forums.StopWords;
 using Forums.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -198,6 +199,39 @@ namespace Forums.Controllers
             getUserForums.RepliesCount = _repo.GetRepliesCount(getUserForums.Id);
 
             return View(getUserForums);
+        }
+        public async Task<IActionResult> SearchCommentAsync(string query)
+        {
+            query = StopWordsExtension.RemoveStopWords(query, "en");
+            var terms = query.Split(' ');
+            var user = await _userManager.GetUserAsync(User);
+            var roles = await _userManager.IsInRoleAsync(user, "Admin");
+            List<UserForum> list;
+            if (roles)
+                list = _repo.SearchComments(terms, 0, 0);
+            else
+                list = _repo.SearchComments(terms, user.levelId, 0);
+
+            List<GetUserForums> getComments = _mapper.Map<List<UserForum>, List<GetUserForums>>(list);
+            ViewBag.query = query;
+
+            return View(getComments);
+        }
+        public async Task<IActionResult> GetNextSearchCommentAsync(string query, int page)
+        {
+            query = StopWordsExtension.RemoveStopWords(query, "en");
+            var terms = query.Split(' ');
+            var user = await _userManager.GetUserAsync(User);
+            var roles = await _userManager.IsInRoleAsync(user, "Admin");
+            List<UserForum> list;
+            if (roles)
+                list = _repo.SearchComments(terms, 0, page);
+            else
+                list = _repo.SearchComments(terms, user.levelId, page);
+
+            List<GetUserForums> getComments = _mapper.Map<List<UserForum>, List<GetUserForums>>(list);
+
+            return Json(getComments);
         }
         [HttpGet]
         public IActionResult GetCommentReplies(int parentId, int? page = 0)

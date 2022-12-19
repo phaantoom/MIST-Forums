@@ -1,0 +1,76 @@
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Globalization;
+using System.Reflection;
+
+namespace Forums.StopWords
+{
+    public static class StopWords
+    {
+
+        public static string[] GetStopWords()
+        {
+            var currentCulture = CultureInfo.CurrentCulture;
+            return GetStopWords(currentCulture);
+        }
+
+        public static string[] GetStopWords(CultureInfo culture)
+        {
+            return GetStopWords(culture.TwoLetterISOLanguageName);
+        }
+
+        public static string[] GetStopWords(string shortLanguageName)
+        {
+            var fullLanguageName = MapLanguage(shortLanguageName);
+            return LoadStopWords(fullLanguageName);
+        }
+
+
+
+        private static string MapLanguage(string shortLanguageName)
+        {
+            var langJson = LoadLanguages();
+            var data = (JObject)JsonConvert.DeserializeObject(langJson);
+            if (data[shortLanguageName] == null)
+            {
+                throw new ArgumentException(String.Format("The language {0} is not supported", shortLanguageName));
+            }
+
+            var result = data[shortLanguageName].Value<string>();
+            return result;
+        }
+
+        private static string[] LoadStopWords(string lang)
+        {
+            var resourceName = String.Format("Forums.StopWords.data.{0}.txt", lang);
+            var data = LoadData(resourceName);
+
+            var result = data.Split(new[] { "\r\n", "\r", "\n" },
+                       StringSplitOptions.None);
+            result = result.Where(x => !String.IsNullOrEmpty(x)).ToArray();
+            return result;
+        }
+
+        private static string LoadLanguages()
+        {
+            var resourceName = "Forums.StopWords.data.languages.json";
+            var result = LoadData(resourceName);
+            return result;
+        }
+
+        private static string LoadData(string resourceName)
+        {
+            string result = String.Empty;
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    result = reader.ReadToEnd();
+                }
+            }
+            return result;
+        }
+
+    }
+}

@@ -13,6 +13,7 @@ namespace Forums.Core
         public void AddComment(UserForum userForum);
         public void DeleteComment(List<UserForum> userForum);
         public List<UserForum> GetComments(int forumId, int? page, int count = 3);
+        public List<UserForum> SearchComments(string[] query, int userLevel, int page, int count = 3);
         public UserForum GetCommentById(int commentId);
         public List<UserForum> GetReplies(int parentId, int? page, int count = 3);
         public int GetRepliesCount(int parentId);
