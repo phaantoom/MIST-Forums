@@ -114,7 +114,16 @@
         function padTo2Digits(num) {
             return num.toString().padStart(2, '0');
         }
+        function copyToClipboard(id) {
+            var base_url = window.location.origin;
+            var $temp = $("<input>");
+            $("body").append($temp);
+            $temp.val(base_url + "/Forums/GetComment/" + id).select();
+            document.execCommand("copy");
+            $temp.remove();
 
+            alert("Copied the Link");
+        }
         function formatDate(date) {
             var newDate = new Date(date);
             var fullDate = [

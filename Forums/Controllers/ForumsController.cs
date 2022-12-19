@@ -205,6 +205,7 @@ namespace Forums.Controllers
 
             return View(getUserForums);
         }
+        [Authorize]
         public async Task<IActionResult> SearchCommentAsync(string query)
         {
             var terms = PreparingQuery(query);

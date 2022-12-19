@@ -196,7 +196,6 @@ namespace Forums.Core
                         .Where(x => x.ParentId == null && x.forumId == id)
                         .Count();
             }
-
         }
 
         public int GetUsersCountByDate(int? id, DateTime? date, bool Equal = true)
@@ -248,7 +247,7 @@ namespace Forums.Core
         public List<UserForum> SearchComments(string[] query, int userLevel, int page, int count = 3)
         {
             IEnumerable<UserForum> list = new List<UserForum>();
-            Expression<Func<UserForum, bool>> expression = x => true;
+            
             if (userLevel == 0)
             {
                 foreach (string term in query)
@@ -275,7 +274,9 @@ namespace Forums.Core
                     ).ToList();
                 }
             }
-            list = list.OrderByDescending(x => x.Id)
+            list = list
+                .Distinct()
+                .OrderByDescending(x => x.Id)
                 .Skip(count * page).Take(count);
 
             foreach (var comment in list)
