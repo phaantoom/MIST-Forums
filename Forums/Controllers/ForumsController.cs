@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Diagnostics;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Forums.Controllers
 {
@@ -21,6 +22,11 @@ namespace Forums.Controllers
         private readonly IMapper _mapper;
         private readonly UserManager<Users> _userManager;
 
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
         public ForumsController(IForumRepository repo, IMapper mapper, UserManager<Users> userManager, IUnitOfWork unitOfWork)
         {
             _repo = repo;
@@ -97,7 +103,6 @@ namespace Forums.Controllers
             }
             return View("Error");
         }
-
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult EditForum(EditForum EditForum)
@@ -202,8 +207,8 @@ namespace Forums.Controllers
         }
         public async Task<IActionResult> SearchCommentAsync(string query)
         {
-            query = StopWordsExtension.RemoveStopWords(query, "en");
-            var terms = query.Split(' ');
+            var terms = PreparingQuery(query);
+
             var user = await _userManager.GetUserAsync(User);
             var roles = await _userManager.IsInRoleAsync(user, "Admin");
             List<UserForum> list;
@@ -219,8 +224,8 @@ namespace Forums.Controllers
         }
         public async Task<IActionResult> GetNextSearchCommentAsync(string query, int page)
         {
-            query = StopWordsExtension.RemoveStopWords(query, "en");
-            var terms = query.Split(' ');
+            var terms = PreparingQuery(query);
+
             var user = await _userManager.GetUserAsync(User);
             var roles = await _userManager.IsInRoleAsync(user, "Admin");
             List<UserForum> list;
@@ -278,7 +283,7 @@ namespace Forums.Controllers
             return PartialView("_ForumStatistics", statisticsObj);
         }
         [NonAction]
-        public List<SelectListItem> GetLevels()
+        private List<SelectListItem> GetLevels()
         {
             List<Level> level = _repo.GetLevels();
             List<SelectListItem> selectList = new();
@@ -292,10 +297,18 @@ namespace Forums.Controllers
             });
             return selectList;
         }
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        [NonAction]
+        private static string[] PreparingQuery(string str)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var charsToRemove = new string[] { "@", ",", ".", ";", "?", "!" };
+            foreach (var c in charsToRemove)
+            {
+                str = str.Replace(c, string.Empty);
+            }
+            str = StopWordsExtension.RemoveStopWords(str, "en");
+            var terms = str.Split(' ');
+
+            return terms;
         }
     }
 }
