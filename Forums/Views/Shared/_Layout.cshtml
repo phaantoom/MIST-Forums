@@ -9,6 +9,7 @@
         admin = await userManager.IsInRoleAsync(user, "Admin");
     }
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,7 +102,7 @@
         </main>
     </div>
 
-    <footer class="fixed-bottom p-2 border-top footer text-muted">
+    <footer class="m-2 p-2 border-top footer text-muted">
         <div class="container">
             &copy; 2022 - Forums - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
@@ -114,16 +115,7 @@
         function padTo2Digits(num) {
             return num.toString().padStart(2, '0');
         }
-        function copyToClipboard(id) {
-            var base_url = window.location.origin;
-            var $temp = $("<input>");
-            $("body").append($temp);
-            $temp.val(base_url + "/Forums/GetComment/" + id).select();
-            document.execCommand("copy");
-            $temp.remove();
-
-            alert("Copied the Link");
-        }
+        
         function formatDate(date) {
             var newDate = new Date(date);
             var fullDate = [
@@ -140,11 +132,9 @@
             if (newDate.getHours() > 12) {
 
                 fullDate += ' ' + 'PM'
-                console.log(fullDate)
             }
             else {
                 fullDate += ' ' + 'AM'
-                console.log(fullDate)
             }
             return fullDate;
         }

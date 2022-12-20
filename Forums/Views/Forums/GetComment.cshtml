@@ -8,65 +8,21 @@
     var user = await userManager.GetUserAsync(User);
     var role = await userManager.IsInRoleAsync(user, "Admin");
     var admin = role.ToString().ToLower();
+    ICollection<Forums.ViewModel.GetUserForums> commentList = new List<Forums.ViewModel.GetUserForums>();
+    commentList.Add(Model);
 }
 
 <div class="card x-75">
+
     <div class="card-body">
-        <div class="d-flex flex-start mb-4" id="Comment@(Model.Id)">
-
-            <img src='https://i.imgur.com/CFpa3nK.jpg' alt='avatar' class='rounded-circle shadow-1-strong me-3' width='65' height='65'>
-            <div class='flex-grow-1 flex-shrink-1'>
-                <div>
-                    <div class='d-flex justify-content-between align-items-center'>
-                        <p class='mb-1'><a asp-action="GetProfile" asp-controller="Users" asp-route-id="@Model.userId"> @Model.userName </a> <span class='small'> - @Model.CreatedDate</span></p>
-                    </div>
-
-                    <p class='small mb-0'>@Model.Comment </p>
-                </div>
-
-                @if (role)
-                {
-                    <div class="row">
-                        <a onclick='deleteComment()' class='link-danger delete'>Delete</a>
-                    </div>
-                }
-
-                <div class="row" id="replyToggle">
-                    @if (Model.RepliesCount > 0)
-                    {
-                        <a class="btn dropdown-toggle w-auto" id="collapsebtn" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
-                    }
-                    else
-                    {
-                        <a style="visibility:hidden" id="collapsebtn" class="btn dropdown-toggle w-auto" data-bs-toggle="collapse" href="#replyCollapse" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
-                    }
-                </div>
-
-                <div class="collapse" id="replyCollapse">
-                    <div id="replyList">
-                    </div>
-                    <button onclick="getReplies()" class="btn btn-link my-2">Load more...</button>
-                </div>
-
-                <div class='row w-50 p-2'>
-                    <div class='col-8'>
-                        <textarea wrap="hard" maxlength="500" class='form-control' id="reply" type='text' placeholder='write reply' aria-label='Write Reply ...'></textarea>
-                    </div>
-                    <div class='col-4'>
-                        <button class='btn btn-primary' onclick='AddReply()'>Reply</button>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <a href="#" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom" title="copy to clipboard" onclick="copyToClipboard(@Model.Id)">
-                            <svg style="width:6%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M280 64h40c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128C0 92.7 28.7 64 64 64h40 9.6C121 27.5 153.3 0 192 0s71 27.5 78.4 64H280zM64 112c-8.8 0-16 7.2-16 16V448c0 8.8 7.2 16 16 16H320c8.8 0 16-7.2 16-16V128c0-8.8-7.2-16-16-16H304v24c0 13.3-10.7 24-24 24H192 104c-13.3 0-24-10.7-24-24V112H64zm128-8a24 24 0 1 0 0-48 24 24 0 1 0 0 48z" /></svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <input type="hidden" value="@Model.Id" id="ParentId" />
-            <input type="hidden" value="@Model.forumId" id="ForumId" />
-        </div>
+        @await Html.PartialAsync("_RenderComment", new Forums.ViewModel.RenderComment
+        {
+        showAllLink = false,
+        showReply = true,
+        UserForums = commentList
+        })
+        <input type="hidden" value="@Model.Id" id="ParentId" />
+        <input type="hidden" value="@Model.forumId" id="ForumId" />
     </div>
 </div>
 
@@ -76,20 +32,21 @@
         $(document).ready(function () {
             getReplies();
         });
-        function AddReply() {
+        function AddReply(id) {
             $.ajax({
                 type: 'post',
                 dataType: 'JSON',
                 url: '/Forums/AddReply',
                 data: {
                     forumId: $('#ForumId').val(),
-                    comment: $('#reply').val(),
-                    parentId: $('#ParentId').val()
+                    comment: $('#reply' + id).val(),
+                    parentId: id
                 },
                 success: function (data) {
-                    $('#reply').val('')
+                    $('#reply' + id).val('')
+                    pageNo = 0
                     ListReplies(data, false)
-                    $('#collapsebtn').css('visibility', 'visible')
+                    $('#replyToggle' + id).css('visibility', 'visible')
                 },
                 error: function (data) {
                     console.log('hiii')
@@ -97,6 +54,7 @@
             });
         }
         function getReplies() {
+            var id = $('#ParentId').val()
             $.ajax({
                 type: 'get',
                 dataType: 'JSON',
@@ -106,7 +64,7 @@
                     page: pageNo++
                 },
                 success: function (data) {
-                    $('#reply').val('')
+                    $('#reply' + id).val('')
                     ListReplies(data, true)
                 },
                 error: function (data) {
@@ -116,52 +74,21 @@
         }
         function ListReplies(data, append) {
             var str = ""
+            var id = $('#ParentId').val()
             $.each(data, function (i, obj) {
                 str += "<div class='d-flex flex-start mt-4' id='Comment" + obj.id + "'><a class='me-3' href='#'><img src='https://i.imgur.com/CFpa3nK.jpg' alt = 'avatar' class='rounded-circle shadow-1-strong' width = '65' height = '65' ></a><div class='flex-grow-1 flex-shrink-1'><div><div class='d-flex justify-content-between align-items-center'><p class='mb-1'><a href='/Users/GetProfile/" + obj.userId + "'>" + obj.userName + "</a><span class='small'> - " + formatDate(obj.createdDate) + "</span></p></div>"
                     + "<p class='small mb-0'>" + obj.comment + "</p></div><a onclick='DeleteReply(" + obj.id + ")' class='link-danger delete'>Delete</a></div></div>";
             });
             if (append) {
-                $('#replyList').append(str);
+                $('#replyList' + id).append(str);
             }
             else
-                $('#replyList').html(str);
-            pageNo = 1
+                $('#replyList' + id).html(str);
+            //pageNo = 1
             if (!@admin)
                 $('.delete').css('display', 'none')
-            $('#replyCollapse').collapse("show");
+            $('#replyCollapse' + id).collapse("show");
         }
-        function deleteComment() {
-            $.ajax({
-                type: 'post',
-                dataType: 'JSON',
-                url: '/Forums/DeleteComment',
-                data: {
-                    commentId: $('#ParentId').val()
-                },
-                success: function (data) {
-                    window.location.href = 'Forums/GetForum' + $('#ForumId').val()
-                },
-                error: function (data) {
-                    console.log(data)
-                }
-            });
-        }
-        function DeleteReply(id) {
-            console.log(id)
-            $.ajax({
-                type: 'post',
-                dataType: 'JSON',
-                url: '/Forums/DeleteReply',
-                data: {
-                    commentId: id
-                },
-                success: function (data) {
-                    $("#Comment" + id).remove();
-                },
-                error: function (data) {
-                    console.log(data)
-                }
-            });
-        }
+        
     </script>
 }
